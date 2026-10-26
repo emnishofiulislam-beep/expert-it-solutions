@@ -206,6 +206,11 @@ export default function Footer() {
                   Order Tracking
                 </Link>
               </li>
+              <li>
+                <Link to="/admin" className="text-blue-400 hover:text-blue-300 transition-colors font-semibold flex items-center gap-1">
+                  <span>Admin Portal</span>
+                </Link>
+              </li>
             </ul>
 
             <div className="mt-6 p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs">

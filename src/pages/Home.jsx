@@ -19,26 +19,27 @@ import {
   Users
 } from 'lucide-react';
 import { SERVICES } from '../data/services.js';
-import { PRODUCTS } from '../data/products.js';
+import { useProducts } from '../context/ProductContext.jsx';
 import ServiceCard from '../components/services/ServiceCard.jsx';
 import ProductCard from '../components/products/ProductCard.jsx';
 import HeroSlider from '../components/home/HeroSlider.jsx';
 
 export default function Home() {
+  const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const filteredProducts =
     selectedCategory === 'all'
-      ? PRODUCTS.filter((p) => p.featured).slice(0, 8)
-      : PRODUCTS.filter((p) => {
-          if (selectedCategory === 'ssd') {
-            return p.category.toLowerCase().includes('ssd') || p.category.toLowerCase().includes('hdd');
-          }
-          if (selectedCategory === 'casing' || selectedCategory === 'pc-casing') {
-            return p.category.toLowerCase().includes('casing');
-          }
-          return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
-        }).slice(0, 8);
+      ? products.filter((p) => p.featured).slice(0, 8)
+      : products.filter((p) => {
+        if (selectedCategory === 'ssd') {
+          return p.category.toLowerCase().includes('ssd') || p.category.toLowerCase().includes('hdd');
+        }
+        if (selectedCategory === 'casing' || selectedCategory === 'pc-casing') {
+          return p.category.toLowerCase().includes('casing');
+        }
+        return p.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      }).slice(0, 8);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
@@ -242,11 +243,10 @@ export default function Home() {
               <button
                 key={tab.id}
                 onClick={() => setSelectedCategory(tab.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  selectedCategory === tab.id
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${selectedCategory === tab.id
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>

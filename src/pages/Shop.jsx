@@ -7,7 +7,7 @@ import {
   RotateCcw,
   Check
 } from 'lucide-react';
-import { PRODUCTS } from '../data/products.js';
+import { useProducts } from '../context/ProductContext.jsx';
 import { CATEGORIES, BRANDS } from '../data/categories.js';
 import ProductCard from '../components/products/ProductCard.jsx';
 import Breadcrumb from '../components/common/Breadcrumb.jsx';
@@ -17,6 +17,7 @@ import EmptyState from '../components/common/EmptyState.jsx';
 const ITEMS_PER_PAGE = 8;
 
 export default function Shop() {
+  const { products } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter states
@@ -53,7 +54,7 @@ export default function Shop() {
 
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -204,11 +205,10 @@ export default function Shop() {
                   setSelectedCategory('all');
                   setCurrentPage(1);
                 }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${
-                  selectedCategory === 'all'
+                className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${selectedCategory === 'all'
                     ? 'bg-blue-50 text-blue-600 font-bold'
                     : 'text-slate-600 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <span>All Categories</span>
                 <span>{PRODUCTS.length}</span>
@@ -220,11 +220,10 @@ export default function Shop() {
                     setSelectedCategory(cat.id);
                     setCurrentPage(1);
                   }}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${
-                    selectedCategory === cat.id
+                  className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${selectedCategory === cat.id
                       ? 'bg-blue-50 text-blue-600 font-bold'
                       : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span className="truncate">{cat.name}</span>
                 </button>

@@ -12,7 +12,7 @@ const DEFAULT_DEMO_USER = {
   city: 'Dhaka',
   postalCode: '1230',
   isVerified: true,
-  role: 'customer',
+  role: 'admin',
   avatar: '/placeholder.jpg'
 };
 
@@ -100,6 +100,155 @@ const INITIAL_DEMO_ORDERS = [
       city: 'Dhaka',
       postalCode: '1230'
     }
+  },
+  {
+    _id: 'EXP-89023',
+    createdAt: '2026-03-09T09:45:00Z',
+    items: [
+      {
+        product: {
+          _id: 'prod-003',
+          name: 'TP-Link Archer C6 AC1200 Gigabit Wireless MU-MIMO Router',
+          price: 3250,
+          image: '/placeholder.jpg',
+          category: 'Router'
+        },
+        quantity: 2,
+        price: 3250
+      }
+    ],
+    subtotal: 6500,
+    shippingFee: 120,
+    discount: 0,
+    total: 6620,
+    orderStatus: 'Pending',
+    paymentMethod: 'Cash on Delivery',
+    paymentStatus: 'Pending',
+    deliveryAddress: {
+      fullName: 'Mahmudul Hasan',
+      phone: '+880 1812-345678',
+      address: 'Plot 18, Block B, Bashundhara R/A',
+      city: 'Dhaka',
+      postalCode: '1229'
+    }
+  },
+  {
+    _id: 'EXP-89024',
+    createdAt: '2026-03-08T18:20:00Z',
+    items: [
+      {
+        product: {
+          _id: 'prod-008',
+          name: 'Kingston NV2 500GB PCIe 4.0 NVMe M.2 SSD',
+          price: 4350,
+          image: '/placeholder.jpg',
+          category: 'SSD'
+        },
+        quantity: 1,
+        price: 4350
+      }
+    ],
+    subtotal: 4350,
+    shippingFee: 60,
+    discount: 150,
+    total: 4260,
+    orderStatus: 'Shipped',
+    paymentMethod: 'Nagad Online',
+    paymentStatus: 'Paid',
+    deliveryAddress: {
+      fullName: 'Nusrat Jahan',
+      phone: '+880 1914-998877',
+      address: 'Road 5, Dhanmondi',
+      city: 'Dhaka',
+      postalCode: '1205'
+    }
+  }
+];
+
+const INITIAL_DEMO_USERS = [
+  {
+    id: 'usr-1001',
+    fullName: 'Shofiul Islam',
+    email: 'emnishofiulislam@gmail.com',
+    phone: '+880 1711-223344',
+    address: 'House 42, Road 11, Sector 4, Uttara',
+    city: 'Dhaka',
+    postalCode: '1230',
+    isVerified: true,
+    role: 'admin',
+    joinedDate: '2026-01-10T10:00:00Z',
+    ordersCount: 2,
+    avatar: '/placeholder.jpg'
+  },
+  {
+    id: 'usr-1002',
+    fullName: 'Rezaul Karim',
+    email: 'reza@expertitsolutionsbd.com',
+    phone: '+880 1762-596986',
+    address: 'Elephant Road Showroom',
+    city: 'Dhaka',
+    postalCode: '1205',
+    isVerified: true,
+    role: 'admin',
+    joinedDate: '2025-11-01T08:30:00Z',
+    ordersCount: 0,
+    avatar: '/placeholder.jpg'
+  },
+  {
+    id: 'usr-1003',
+    fullName: 'Tanvir Ahmed',
+    email: 'tanvir@expertitsolutionsbd.com',
+    phone: '+880 1819-112233',
+    address: 'Banani Branch',
+    city: 'Dhaka',
+    postalCode: '1213',
+    isVerified: true,
+    role: 'staff',
+    joinedDate: '2026-01-15T12:00:00Z',
+    ordersCount: 0,
+    avatar: '/placeholder.jpg'
+  },
+  {
+    id: 'usr-1004',
+    fullName: 'Mahmudul Hasan',
+    email: 'mahmud@gmail.com',
+    phone: '+880 1812-345678',
+    address: 'Plot 18, Block B, Bashundhara R/A',
+    city: 'Dhaka',
+    postalCode: '1229',
+    isVerified: true,
+    role: 'customer',
+    joinedDate: '2026-02-04T15:20:00Z',
+    ordersCount: 1,
+    avatar: '/placeholder.jpg'
+  },
+  {
+    id: 'usr-1005',
+    fullName: 'Nusrat Jahan',
+    email: 'nusrat@yahoo.com',
+    phone: '+880 1914-998877',
+    address: 'Road 5, Dhanmondi',
+    city: 'Dhaka',
+    postalCode: '1205',
+    isVerified: true,
+    role: 'customer',
+    joinedDate: '2026-02-18T11:10:00Z',
+    ordersCount: 1,
+    avatar: '/placeholder.jpg'
+  },
+  {
+    id: 'usr-1006',
+    fullName: 'Kamrul Islam',
+    email: 'kamrul@gmail.com',
+    phone: '+880 1733-445566',
+    address: 'Mirpur 10',
+    city: 'Dhaka',
+    postalCode: '1216',
+    isVerified: false,
+    role: 'customer',
+    joinedDate: '2026-03-02T16:40:00Z',
+    ordersCount: 0,
+    avatar: '/placeholder.jpg'
   }
 ];
 
@@ -387,6 +536,97 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const [users, setUsers] = useState(() => {
+    try {
+      const storedUsers = localStorage.getItem('expert_it_users_list');
+      return storedUsers ? JSON.parse(storedUsers) : INITIAL_DEMO_USERS;
+    } catch {
+      return INITIAL_DEMO_USERS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('expert_it_users_list', JSON.stringify(users));
+    } catch (e) {
+      console.error('Failed to sync users to localStorage', e);
+    }
+  }, [users]);
+
+  // Update order status (Admin)
+  const updateOrderStatus = (orderId, newStatus) => {
+    setOrders((prev) =>
+      prev.map((ord) =>
+        ord._id === orderId
+          ? {
+              ...ord,
+              orderStatus: newStatus,
+              updatedAt: new Date().toISOString()
+            }
+          : ord
+      )
+    );
+  };
+
+  // Delete order (Admin)
+  const deleteOrder = (orderId) => {
+    setOrders((prev) => prev.filter((ord) => ord._id !== orderId));
+  };
+
+  // Add new user (Admin)
+  const addUser = (userData) => {
+    const newUser = {
+      id: 'usr-' + Date.now().toString(36),
+      fullName: userData.fullName,
+      email: userData.email,
+      phone: userData.phone || '+880 1700-000000',
+      address: userData.address || 'Dhaka, Bangladesh',
+      city: userData.city || 'Dhaka',
+      postalCode: userData.postalCode || '1000',
+      role: userData.role || 'customer',
+      isVerified: Boolean(userData.isVerified),
+      joinedDate: new Date().toISOString(),
+      ordersCount: 0,
+      avatar: '/placeholder.jpg'
+    };
+    setUsers((prev) => [newUser, ...prev]);
+    return newUser;
+  };
+
+  // Update user (Admin)
+  const updateUser = (userId, updatedFields) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, ...updatedFields } : u))
+    );
+    // If updating current logged in user
+    if (user && user.id === userId) {
+      setUser((prev) => ({ ...prev, ...updatedFields }));
+    }
+  };
+
+  // Delete user (Admin)
+  const deleteUser = (userId) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
+
+  // Toggle user verification (Admin)
+  const toggleUserVerification = (userId) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, isVerified: !u.isVerified } : u
+      )
+    );
+  };
+
+  // Switch role between customer and admin for demo/testing convenience
+  const switchRole = (newRole) => {
+    if (!user) return;
+    const targetRole = newRole || (user.role === 'admin' ? 'customer' : 'admin');
+    const updated = { ...user, role: targetRole };
+    setUser(updated);
+    localStorage.setItem('expert_it_user', JSON.stringify(updated));
+  };
+
   // Add an order to history
   const addOrder = (orderData) => {
     const newOrder = {
@@ -418,6 +658,7 @@ export function AuthProvider({ children }) {
         isAuthenticated,
         isLoading,
         orders,
+        users,
         login,
         register,
         logout,
@@ -427,7 +668,14 @@ export function AuthProvider({ children }) {
         resetPassword,
         updateProfile,
         changePassword,
-        addOrder
+        addOrder,
+        updateOrderStatus,
+        deleteOrder,
+        addUser,
+        updateUser,
+        deleteUser,
+        toggleUserVerification,
+        switchRole
       }}
     >
       {children}

@@ -54,10 +54,9 @@ export default function Navbar() {
   };
 
   const navLinkClass = ({ isActive }) =>
-    `px-3 py-2 text-sm font-semibold transition-colors rounded-md ${
-      isActive
-        ? 'text-blue-600 bg-blue-50/80 font-bold'
-        : 'text-slate-700 hover:text-blue-600 hover:bg-slate-100'
+    `px-3 py-2 text-sm font-semibold transition-colors rounded-md ${isActive
+      ? 'text-blue-600 bg-blue-50/80 font-bold'
+      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-100'
     }`;
 
   return (
@@ -146,6 +145,18 @@ export default function Navbar() {
               )}
             </Link>
 
+            {/* Admin Panel Quick Action */}
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold transition-all shadow-2xs"
+                title="Go to Admin Management Console"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>Admin Panel</span>
+              </Link>
+            )}
+
             {/* User Account / Auth Buttons */}
             {isAuthenticated && user ? (
               <div className="relative" ref={dropdownRef}>
@@ -176,6 +187,17 @@ export default function Navbar() {
                       <p className="text-sm font-bold text-slate-900 truncate">{user.fullName}</p>
                       <p className="text-xs text-slate-500 truncate">{user.email}</p>
                     </div>
+
+                    {user?.role === 'admin' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-blue-600 bg-blue-50/80 hover:bg-blue-100/80 transition-colors border-b border-blue-100/50"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-blue-600" />
+                        <span>Admin Console</span>
+                      </Link>
+                    )}
 
                     <Link
                       to="/account/profile"
@@ -329,7 +351,18 @@ export default function Navbar() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-2">
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 w-full text-center px-3 py-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
+                    <span>Enter Admin Panel</span>
+                  </Link>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
                   <Link
                     to="/account/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
