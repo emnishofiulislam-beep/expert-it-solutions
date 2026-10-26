@@ -72,13 +72,16 @@ export default function ProductDetails() {
     );
   }
 
-  const isOutOfStock = product.stock <= 0;
+  const isOutOfStock = Number(product.stock) <= 0;
   const isWishlisted = isInWishlist(product._id);
-  const discountPercent = product.discountPrice
-    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
-    : 0;
+  const regularPrice = Number(product.price) || 0;
+  const discountPrice = product.discountPrice ? Number(product.discountPrice) : null;
+  const discountPercent =
+    discountPrice && regularPrice > discountPrice && regularPrice > 0
+      ? Math.round(((regularPrice - discountPrice) / regularPrice) * 100)
+      : 0;
 
-  const relatedProducts = PRODUCTS.filter(
+  const relatedProducts = products.filter(
     (p) => p.category === product.category && p._id !== product._id
   ).slice(0, 4);
 
@@ -154,10 +157,11 @@ export default function ProductDetails() {
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`w-18 h-18 rounded-xl border-2 p-2 bg-slate-50 flex items-center justify-center shrink-0 transition-colors ${selectedImageIndex === idx
+                    className={`w-18 h-18 rounded-xl border-2 p-2 bg-slate-50 flex items-center justify-center shrink-0 transition-colors ${
+                      selectedImageIndex === idx
                         ? 'border-blue-600 bg-blue-50/50'
                         : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                    }`}
                   >
                     <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-contain" />
                   </button>
@@ -276,10 +280,11 @@ export default function ProductDetails() {
 
                     <button
                       onClick={() => toggleWishlist(product)}
-                      className={`p-3.5 rounded-xl border transition-colors ${isWishlisted
+                      className={`p-3.5 rounded-xl border transition-colors ${
+                        isWishlisted
                           ? 'border-rose-300 bg-rose-50 text-rose-600'
                           : 'border-slate-200 hover:border-slate-300 text-slate-600 bg-white'
-                        }`}
+                      }`}
                       title="Add to Wishlist"
                     >
                       <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600 text-rose-600' : ''}`} />
@@ -319,10 +324,11 @@ export default function ProductDetails() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-5 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab === tab.id
+              className={`py-4 px-5 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+                activeTab === tab.id
                   ? 'border-blue-600 text-blue-600 bg-white -mb-px'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
-                }`}
+              }`}
             >
               {tab.label}
             </button>
@@ -339,8 +345,9 @@ export default function ProductDetails() {
                   {Object.entries(product.specifications).map(([key, value], idx) => (
                     <div
                       key={key}
-                      className={`grid grid-cols-1 sm:grid-cols-3 p-3.5 text-xs sm:text-sm ${idx % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'
-                        }`}
+                      className={`grid grid-cols-1 sm:grid-cols-3 p-3.5 text-xs sm:text-sm ${
+                        idx % 2 === 0 ? 'bg-slate-50/70' : 'bg-white'
+                      }`}
                     >
                       <span className="font-semibold text-slate-600">{key}</span>
                       <span className="sm:col-span-2 font-medium text-slate-900 mt-1 sm:mt-0">{value}</span>
@@ -411,8 +418,9 @@ export default function ProductDetails() {
                           className="p-1 hover:scale-110 transition-transform"
                         >
                           <Star
-                            className={`w-5 h-5 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'
-                              }`}
+                            className={`w-5 h-5 ${
+                              star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'
+                            }`}
                           />
                         </button>
                       ))}

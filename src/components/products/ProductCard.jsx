@@ -14,11 +14,14 @@ export default function ProductCard({ product, index = 0 }) {
 
   if (!product) return null;
 
-  const isOutOfStock = product.stock <= 0;
+  const isOutOfStock = Number(product.stock) <= 0;
   const isWishlisted = isInWishlist(product._id);
-  const discountPercent = product.discountPrice
-    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
-    : 0;
+  const regularPrice = Number(product.price) || 0;
+  const discountPrice = product.discountPrice ? Number(product.discountPrice) : null;
+  const discountPercent =
+    discountPrice && regularPrice > discountPrice && regularPrice > 0
+      ? Math.round(((regularPrice - discountPrice) / regularPrice) * 100)
+      : 0;
 
   return (
     <>
@@ -121,11 +124,11 @@ export default function ProductCard({ product, index = 0 }) {
             <div className="flex items-baseline justify-between mb-3">
               <div>
                 <span className="text-base font-black text-slate-900">
-                  ৳{(product.discountPrice || product.price).toLocaleString()}
+                  ৳{(discountPrice || regularPrice).toLocaleString()}
                 </span>
-                {product.discountPrice && (
+                {discountPrice && (
                   <span className="ml-2 text-xs font-medium text-slate-400 line-through">
-                    ৳{product.price.toLocaleString()}
+                    ৳{regularPrice.toLocaleString()}
                   </span>
                 )}
               </div>

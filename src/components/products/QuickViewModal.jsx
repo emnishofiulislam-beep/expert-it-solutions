@@ -12,11 +12,14 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
   if (!isOpen || !product) return null;
 
-  const isOutOfStock = product.stock <= 0;
+  const isOutOfStock = Number(product.stock) <= 0;
   const isWishlisted = isInWishlist(product._id);
-  const discountPercent = product.discountPrice
-    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
-    : 0;
+  const regularPrice = Number(product.price) || 0;
+  const discountPrice = product.discountPrice ? Number(product.discountPrice) : null;
+  const discountPercent =
+    discountPrice && regularPrice > discountPrice && regularPrice > 0
+      ? Math.round(((regularPrice - discountPrice) / regularPrice) * 100)
+      : 0;
 
   const handleAddToCart = () => {
     addToCart(product, quantity);

@@ -8,6 +8,7 @@ import {
   Check
 } from 'lucide-react';
 import { useProducts } from '../context/ProductContext.jsx';
+import { PRODUCTS as DEFAULT_PRODUCTS } from '../data/products.js';
 import { CATEGORIES, BRANDS } from '../data/categories.js';
 import ProductCard from '../components/products/ProductCard.jsx';
 import Breadcrumb from '../components/common/Breadcrumb.jsx';
@@ -17,7 +18,8 @@ import EmptyState from '../components/common/EmptyState.jsx';
 const ITEMS_PER_PAGE = 8;
 
 export default function Shop() {
-  const { products } = useProducts();
+  const productContext = useProducts();
+  const products = productContext?.products || DEFAULT_PRODUCTS;
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filter states
@@ -58,10 +60,10 @@ export default function Shop() {
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = product.name.toLowerCase().includes(q);
-        const matchBrand = product.brand.toLowerCase().includes(q);
-        const matchSku = product.sku.toLowerCase().includes(q);
-        const matchCat = product.category.toLowerCase().includes(q);
+        const matchName = product.name ? product.name.toLowerCase().includes(q) : false;
+        const matchBrand = product.brand ? product.brand.toLowerCase().includes(q) : false;
+        const matchSku = product.sku ? product.sku.toLowerCase().includes(q) : false;
+        const matchCat = product.category ? product.category.toLowerCase().includes(q) : false;
         if (!matchName && !matchBrand && !matchSku && !matchCat) {
           return false;
         }
@@ -71,14 +73,14 @@ export default function Shop() {
       if (selectedCategory !== 'all') {
         const catObj = CATEGORIES.find((c) => c.id === selectedCategory);
         const targetCat = catObj ? catObj.name.toLowerCase() : selectedCategory.toLowerCase();
-        if (!product.category.toLowerCase().includes(targetCat)) {
+        if (!product.category || !product.category.toLowerCase().includes(targetCat)) {
           return false;
         }
       }
 
       // Brand
       if (selectedBrand !== 'all') {
-        if (product.brand.toLowerCase() !== selectedBrand.toLowerCase()) {
+        if (!product.brand || product.brand.toLowerCase() !== selectedBrand.toLowerCase()) {
           return false;
         }
       }
@@ -89,24 +91,24 @@ export default function Shop() {
       }
 
       // Price
-      const finalPrice = product.discountPrice || product.price;
+      const finalPrice = product.discountPrice || product.price || 0;
       if (finalPrice > priceRange) {
         return false;
       }
 
       return true;
     }).sort((a, b) => {
-      const priceA = a.discountPrice || a.price;
-      const priceB = b.discountPrice || b.price;
+      const priceA = a.discountPrice || a.price || 0;
+      const priceB = b.discountPrice || b.price || 0;
 
       if (sortBy === 'price-asc') return priceA - priceB;
       if (sortBy === 'price-desc') return priceB - priceA;
-      if (sortBy === 'rating') return b.rating - a.rating;
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'newest') return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-      if (sortBy === 'popular') return b.reviewCount - a.reviewCount;
+      if (sortBy === 'popular') return (b.reviewCount || 0) - (a.reviewCount || 0);
       return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
     });
-  }, [searchQuery, selectedCategory, selectedBrand, inStockOnly, priceRange, sortBy]);
+  }, [products, searchQuery, selectedCategory, selectedBrand, inStockOnly, priceRange, sortBy]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -144,7 +146,7 @@ export default function Shop() {
 
         <div className="text-left sm:text-right shrink-0">
           <span className="text-xs text-blue-300 font-semibold block">Total Catalog Items</span>
-          <span className="text-2xl font-black text-white">{PRODUCTS.length}+ Products</span>
+          <span className="text-2xl font-black text-white">{products.length}+ Products</span>
         </div>
       </div>
 
@@ -205,13 +207,14 @@ export default function Shop() {
                   setSelectedCategory('all');
                   setCurrentPage(1);
                 }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${selectedCategory === 'all'
+                className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${
+                  selectedCategory === 'all'
                     ? 'bg-blue-50 text-blue-600 font-bold'
                     : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                }`}
               >
                 <span>All Categories</span>
-                <span>{PRODUCTS.length}</span>
+                <span>{products.length}</span>
               </button>
               {CATEGORIES.map((cat) => (
                 <button
@@ -220,10 +223,11 @@ export default function Shop() {
                     setSelectedCategory(cat.id);
                     setCurrentPage(1);
                   }}
-                  className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${selectedCategory === cat.id
+                  className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center justify-between transition-colors ${
+                    selectedCategory === cat.id
                       ? 'bg-blue-50 text-blue-600 font-bold'
                       : 'text-slate-600 hover:bg-slate-50'
-                    }`}
+                  }`}
                 >
                   <span className="truncate">{cat.name}</span>
                 </button>
