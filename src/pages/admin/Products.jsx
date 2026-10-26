@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Package,
   Plus,
@@ -14,7 +14,11 @@ import {
   ChevronDown,
   RefreshCw,
   Eye,
-  Filter
+  Filter,
+  Upload,
+  Image as ImageIcon,
+  FileImage,
+  Check
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useProducts } from '../../context/ProductContext.jsx';
@@ -37,6 +41,9 @@ export default function Products() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [customImageUrl, setCustomImageUrl] = useState('');
 
   // Form State
   const initialForm = {
@@ -49,10 +56,110 @@ export default function Products() {
     sku: '',
     warranty: '1 Year Full Replacement Warranty',
     description: '',
-    featured: false
+    featured: false,
+    images: []
   };
 
   const [formData, setFormData] = useState(initialForm);
+
+  // Helper to process, resize and compress client image files into lightweight Base64 data URLs
+  const processImageFile = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const MAX_DIM = 960;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_DIM) {
+                height = Math.round((height * MAX_DIM) / width);
+                width = MAX_DIM;
+              }
+            } else {
+              if (height > MAX_DIM) {
+                width = Math.round((width * MAX_DIM) / height);
+                height = MAX_DIM;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve(dataUrl);
+          } catch {
+            resolve(e.target.result);
+          }
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve('/placeholder.jpg');
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFilesSelected = async (filesList) => {
+    if (!filesList || filesList.length === 0) return;
+    setIsUploading(true);
+    try {
+      const files = Array.from(filesList);
+      const convertedImages = [];
+
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        const dataUrl = await processImageFile(file);
+        convertedImages.push(dataUrl);
+      }
+
+      if (convertedImages.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...convertedImages]
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to process image upload', err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleSetPrimaryImage = (indexToPrimary) => {
+    setFormData((prev) => {
+      const newImages = [...prev.images];
+      const [selected] = newImages.splice(indexToPrimary, 1);
+      newImages.unshift(selected);
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const handleAddCustomImageUrl = (e) => {
+    e.preventDefault();
+    if (!customImageUrl.trim()) return;
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, customImageUrl.trim()]
+    }));
+    setCustomImageUrl('');
+  };
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
@@ -92,6 +199,7 @@ export default function Products() {
   // Open add modal
   const handleOpenAddModal = () => {
     setFormData(initialForm);
+    setCustomImageUrl('');
     setEditingProduct(null);
     setIsAddModalOpen(true);
   };
@@ -99,6 +207,7 @@ export default function Products() {
   // Open edit modal
   const handleOpenEditModal = (product) => {
     setEditingProduct(product);
+    setCustomImageUrl('');
     setFormData({
       name: product.name,
       category: product.category,
@@ -109,7 +218,8 @@ export default function Products() {
       sku: product.sku || '',
       warranty: product.specifications?.Warranty || '1 Year Official Warranty',
       description: product.description || '',
-      featured: Boolean(product.featured)
+      featured: Boolean(product.featured),
+      images: Array.isArray(product.images) && product.images.length > 0 ? product.images : ['/placeholder.jpg']
     });
     setIsAddModalOpen(true);
   };
@@ -118,6 +228,11 @@ export default function Products() {
   const handleSubmitForm = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price) return;
+
+    const productImages =
+      Array.isArray(formData.images) && formData.images.length > 0
+        ? formData.images
+        : ['/placeholder.jpg'];
 
     if (editingProduct) {
       updateProduct(editingProduct._id, {
@@ -130,6 +245,7 @@ export default function Products() {
         sku: formData.sku,
         description: formData.description,
         featured: formData.featured,
+        images: productImages,
         specifications: {
           ...editingProduct.specifications,
           Brand: formData.brand,
@@ -148,7 +264,7 @@ export default function Products() {
         description: formData.description,
         featured: formData.featured,
         warranty: formData.warranty,
-        images: ['/placeholder.jpg']
+        images: productImages
       });
     }
 
@@ -587,6 +703,148 @@ export default function Products() {
                     placeholder="1 Year Full Replacement"
                     className="w-full px-3 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-white focus:outline-hidden focus:border-blue-500"
                   />
+                </div>
+              </div>
+
+              {/* Product Photos Upload from Computer */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-blue-400" />
+                    <label className="text-xs font-bold text-slate-200">
+                      Product Photos (Select from this Computer)
+                    </label>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {formData.images.length} {formData.images.length === 1 ? 'photo' : 'photos'} added
+                  </span>
+                </div>
+
+                {/* File Dropzone & Click Selector */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files) {
+                      handleFilesSelected(e.dataTransfer.files);
+                    }
+                  }}
+                  className="border-2 border-dashed border-slate-700 hover:border-blue-500 bg-slate-900/60 hover:bg-slate-900 rounded-xl p-4 text-center cursor-pointer transition-all duration-200 group"
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => handleFilesSelected(e.target.files)}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                  />
+
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+
+                    <div className="text-xs">
+                      <span className="font-bold text-white group-hover:text-blue-400 transition-colors">
+                        Click to select photo(s) from this computer
+                      </span>
+                      <span className="text-slate-400"> or drag & drop files here</span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500">
+                      Supports JPG, PNG, WebP • Auto-optimized for web browsing
+                    </p>
+
+                    {isUploading && (
+                      <div className="flex items-center gap-2 text-xs text-blue-400 font-semibold mt-1">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Processing & optimizing image...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Uploaded Photos Thumbnails */}
+                {formData.images.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                      {formData.images.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="group relative aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={`Product preview ${idx + 1}`}
+                            className="w-full h-full object-contain p-1"
+                          />
+
+                          {/* 1st Photo is Cover */}
+                          {idx === 0 && (
+                            <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-xs">
+                              Cover
+                            </span>
+                          )}
+
+                          {/* Thumbnail Action Overlay */}
+                          <div className="absolute inset-0 bg-slate-950/75 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
+                            {idx !== 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetPrimaryImage(idx);
+                                }}
+                                className="p-1 rounded bg-slate-800 text-amber-400 hover:text-white hover:bg-blue-600"
+                                title="Make Main Cover Photo"
+                              >
+                                <Star className="w-3.5 h-3.5 fill-current" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveImage(idx);
+                              }}
+                              className="p-1 rounded bg-slate-800 text-rose-400 hover:text-white hover:bg-rose-600"
+                              title="Delete Photo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                      The first photo with the &ldquo;Cover&rdquo; badge is used for catalog cards. Click the star icon on any photo to set as cover.
+                    </p>
+                  </div>
+                )}
+
+                {/* Alternative Web URL input */}
+                <div className="pt-2 flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={customImageUrl}
+                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    placeholder="Or enter image URL (https://...)"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomImageUrl}
+                    disabled={!customImageUrl.trim()}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
+                  >
+                    Add URL
+                  </button>
                 </div>
               </div>
 
