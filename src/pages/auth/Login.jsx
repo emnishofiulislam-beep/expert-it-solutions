@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff, LogIn, Sparkles } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import Breadcrumb from '../../components/common/Breadcrumb.jsx';
@@ -19,32 +19,35 @@ export default function Login() {
 
   const from = location.state?.from?.pathname || '/account';
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!email || !password) {
-      error('Please enter your email and password.');
+      error("Please enter your email and password.");
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const res = login(email, password);
+
+    try {
+      await login(email, password);
+
+      success("Logged in successfully!");
+      navigate(from, { replace: true });
+    } catch (err) {
+      error(
+        err.response?.data?.message ||
+        err.message ||
+        "Login failed"
+      );
+    } finally {
       setIsSubmitting(false);
-
-      if (res.success) {
-        success('Logged in successfully! Welcome back.');
-        navigate(from, { replace: true });
-      } else {
-        error(res.message || 'Invalid credentials');
-      }
-    }, 500);
+    }
   };
 
-  // Quick fill demo user
-  const handleFillDemo = () => {
-    setEmail('shofiul@expertit.com');
-    setPassword('password123');
-  };
+
+
 
   return (
     <div className="max-w-md mx-auto px-4 py-12 space-y-6">
@@ -62,14 +65,7 @@ export default function Login() {
         </div>
 
         {/* Demo Quick fill button for immediate review */}
-        <button
-          type="button"
-          onClick={handleFillDemo}
-          className="w-full py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Quick Fill Demo Customer Account</span>
-        </button>
+
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>

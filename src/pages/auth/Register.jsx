@@ -19,48 +19,58 @@ export default function Register() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!fullName || !email || !phone || !password) {
-      error('Please fill in all required fields.');
+      error("Please fill in all required fields.");
       return;
     }
 
-    if (password.length < 6) {
-      error('Password must be at least 6 characters long.');
+    if (password.length < 8) {
+      error("Password must be at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      error('Passwords do not match.');
+      error("Passwords do not match.");
       return;
     }
 
     if (!agreeTerms) {
-      error('You must agree to our terms of service.');
+      error("Please accept the terms.");
       return;
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const res = register({
+
+    try {
+      await register({
         fullName,
         email,
         phone,
-        password
+        password,
+        confirmPassword,
+        agreeTerms,
       });
 
-      setIsSubmitting(false);
+      success(
+        "Registration successful! Check your email to verify your account."
+      );
 
-      if (res.success) {
-        success('Account created successfully! Welcome to EXPERT IT SOLUTIONS.');
-        navigate('/account');
-      } else {
-        error(res.message || 'Registration failed');
-      }
-    }, 600);
+      navigate("/login");
+    } catch (err) {
+      error(
+        err.response?.data?.message ||
+        err.message ||
+        "Registration failed"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   return (
     <div className="max-w-md mx-auto px-4 py-10 space-y-6">
@@ -131,7 +141,7 @@ export default function Register() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

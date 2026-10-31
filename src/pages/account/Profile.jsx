@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
 import {
   User,
@@ -20,8 +20,11 @@ import { useWishlist } from '../../context/WishlistContext.jsx';
 import Breadcrumb from '../../components/common/Breadcrumb.jsx';
 
 export default function Profile() {
-  const { user, updateProfile, orders } = useAuth();
-  const { wishlistItems } = useWishlist();
+  const { user, updateProfile, changePassword } = useAuth();
+
+  const orders = [];
+
+  const { wishlistItems = [] } = useWishlist();
   const { success, error } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -34,33 +37,85 @@ export default function Profile() {
     postalCode: user?.postalCode || ''
   });
 
+
+  useEffect(() => {
+    if (user && !isEditing) {
+      setFormData({
+        fullName: user.fullName || "",
+        phone: user.phone || "",
+        company: user.company || "",
+        address: user.address || "",
+        city: user.city || "",
+        postalCode: user.postalCode || "",
+      });
+    }
+  }, [user, isEditing]);
+
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  const handleUpdateProfile = (e) => {
+
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    updateProfile(formData);
-    setIsEditing(false);
-    success('Profile updated successfully!');
+
+    try {
+      await updateProfile(formData);
+
+      setIsEditing(false);
+      success("Profile updated successfully!");
+    } catch (err) {
+      error(
+        err.response?.data?.message ||
+        "Failed to update profile."
+      );
+    }
   };
 
-  const handleUpdatePassword = (e) => {
+
+
+
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (passwordData.newPassword.length < 6) {
-      error('New password must be at least 6 characters.');
-      return;
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      error('Passwords do not match.');
+
+    if (passwordData.newPassword.length < 8) {
+      error("New password must be at least 8 characters.");
       return;
     }
 
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    success('Password updated successfully!');
+    if (
+      passwordData.newPassword !==
+      passwordData.confirmPassword
+    ) {
+      error("Passwords do not match.");
+      return;
+    }
+
+    try {
+      await changePassword(passwordData);
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      success(
+        "Password changed successfully. Please login again."
+      );
+
+      window.location.assign("/login");
+    } catch (err) {
+      error(
+        err.response?.data?.message ||
+        "Failed to change password."
+      );
+    }
   };
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
@@ -288,7 +343,7 @@ export default function Profile() {
                 required
                 value={passwordData.newPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:bg-white focus:ring-2 focus:ring-blue-500 text-xs"
               />
             </div>
